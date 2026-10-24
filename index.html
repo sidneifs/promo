@@ -179,7 +179,7 @@ footer p+p{margin-top:10px}
 /* As ofertas vêm do arquivo produtos.csv (o mesmo do bot), que fica na mesma pasta desta página.
    Colunas: loja, titulo, preco_de, preco_por, link, imagem, cupom, postado.
    Para atualizar a página: troque o produtos.csv no GitHub. Aparecem os 24 mais recentes (últimas linhas). */
-var MAX = 24;
+var MAX = 48;
 var PRODUTOS = [];
 
 /* Lista reserva: aparece se o produtos.csv não carregar (por exemplo, ao abrir o arquivo direto no celular).
@@ -308,6 +308,38 @@ fetch("produtos.csv", {cache: "no-store"})
     usar(PRODUTOS.length ? PRODUTOS : RESERVA);
   })
   .catch(function(){ usar(RESERVA); });
+
+/* Auto-giro do carrossel: avança sozinho, pausa no hover/toque, setas manuais continuam funcionando */
+var autoTimer = null;
+var AUTO_MS = 3500;
+function autoAvancar(){
+  if (!track || !PRODUTOS.length) return;
+  var maxScroll = track.scrollWidth - track.clientWidth;
+  if (maxScroll <= 0) return;
+  var step = Math.max(track.querySelector(".card") ? track.querySelector(".card").offsetWidth + 16 : 286, track.clientWidth * 0.35);
+  if (track.scrollLeft + step >= maxScroll - 8) {
+    track.scrollTo({left: 0, behavior: "smooth"});
+  } else {
+    track.scrollBy({left: step, behavior: "smooth"});
+  }
+}
+function startAuto(){
+  stopAuto();
+  if (PRODUTOS.length < 3) return;
+  autoTimer = setInterval(autoAvancar, AUTO_MS);
+}
+function stopAuto(){
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+}
+track.addEventListener("mouseenter", stopAuto);
+track.addEventListener("mouseleave", startAuto);
+track.addEventListener("touchstart", stopAuto, {passive: true});
+track.addEventListener("touchend", function(){ setTimeout(startAuto, 4000); }, {passive: true});
+document.getElementById("prev").addEventListener("click", function(){ stopAuto(); setTimeout(startAuto, 6000); });
+document.getElementById("next").addEventListener("click", function(){ stopAuto(); setTimeout(startAuto, 6000); });
+/* reinicia o auto quando a lista é montada */
+var _usar = usar;
+usar = function(lista){ _usar(lista); startAuto(); };
 </script>
 </body>
 </html>
